@@ -105,66 +105,67 @@ export default function App() {
           .filter(
             person =>
               selectedRole === "All" ||
-              person.roleGroup === selectedRole
+              person.roleGroup?.trim() === selectedRole
           )
-          .map((person, index) => (
-            <Marker
-              key={index}
-              position={[person.lat, person.lng]}
-              icon={
-                markerIcons[person.roleGroup] ??
-                markerIcons.default
-              }
-            >
-              <Popup>
-                <div
-                  style={{
-                    width: "180px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    textAlign: "center"
-                  }}
-                >
-                  <img
-                    src={person.image}
-                    alt={person.name}
-                    style={{
-                      width: "96px",
-                      height: "96px",
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                      marginBottom: "10px"
-                    }}
-                  />
+          .map((person, index) => {
+            const roleKey = person.roleGroup?.trim();
 
-                  <div style={{ fontWeight: 600 }}>
-                    {person.name}
-                  </div>
-
+            return (
+              <Marker
+                key={index}
+                position={[person.lat, person.lng]}
+                icon={markerIcons[roleKey] ?? markerIcons.default}
+              >
+                <Popup>
                   <div
                     style={{
-                      fontSize: "0.85rem",
-                      color: "#555",
-                      marginTop: "2px"
+                      width: "180px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      textAlign: "center"
                     }}
                   >
-                    {person.role}
-                  </div>
+                    <img
+                      src={person.image}
+                      alt={person.name}
+                      style={{
+                        width: "96px",
+                        height: "96px",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        marginBottom: "10px"
+                      }}
+                    />
 
-                  <div
-                    style={{
-                      fontSize: "0.75rem",
-                      color: "#777",
-                      marginTop: "4px"
-                    }}
-                  >
-                    {person.city}
+                    <div style={{ fontWeight: 600 }}>
+                      {person.name}
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: "0.85rem",
+                        color: "#555",
+                        marginTop: "2px"
+                      }}
+                    >
+                      {person.role}
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "#777",
+                        marginTop: "4px"
+                      }}
+                    >
+                      {person.city}
+                    </div>
                   </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+                </Popup>
+              </Marker>
+            );
+          })}
       </MapContainer>
     </div>
   );
