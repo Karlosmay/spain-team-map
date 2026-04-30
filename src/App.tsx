@@ -52,7 +52,7 @@ export default function App() {
           boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
         }}
       >
-        {["All", "MPS", "Manager", "Support"].map(role => (
+        {["All", "MPS", "Manager", "PSS"].map(role => (
           <button
             key={role}
             onClick={() => setSelectedRole(role)}
@@ -87,7 +87,7 @@ export default function App() {
         </div>
         <div>🔵 MPS</div>
         <div>🔴 Manager</div>
-        <div>🟢 Support</div>
+        <div>🟢 PSS</div>
       </div>
 
       {/* MAP */}
