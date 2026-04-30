@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Papa from "papaparse";
 import MarkerClusterGroup from "react-leaflet-cluster";
+import L from "leaflet";
 import { markerIcons } from "./markerIcons";
 
 type Person = {
@@ -15,11 +16,20 @@ type Person = {
   image: string;
 };
 
+/* ✅ CUSTOM CLUSTER ICON (marker-shaped with number) */
+const createClusterCustomIcon = (cluster: any) => {
+  return L.divIcon({
+    html: `<div class="cluster-marker">${cluster.getChildCount()}</div>`,
+    className: "custom-cluster-icon",
+    iconSize: L.point(40, 40, true)
+  });
+};
+
 export default function App() {
   const [people, setPeople] = useState<Person[]>([]);
   const [selectedRole, setSelectedRole] = useState("All");
 
-  // Load CSV once on startup
+  /* Load CSV once */
   useEffect(() => {
     async function loadPeopleFromCSV() {
       const response = await fetch("/people.csv");
@@ -37,14 +47,13 @@ export default function App() {
     loadPeopleFromCSV();
   }, []);
 
-  // ✅ Derive roles and counters from CSV
+  /* ✅ AUTO-GENERATE ROLES + COUNTERS */
   const roleStats = useMemo(() => {
     const counts: Record<string, number> = {};
 
     people.forEach(person => {
       const role = person.roleGroup?.trim();
       if (!role) return;
-
       counts[role] = (counts[role] ?? 0) + 1;
     });
 
@@ -88,7 +97,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* LEGEND WITH AUTOMATIC COUNTERS */}
+      {/* LEGEND WITH COUNTERS */}
       <div
         style={{
           position: "absolute",
@@ -100,7 +109,7 @@ export default function App() {
           borderRadius: "8px",
           boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
           fontSize: "0.85rem",
-          minWidth: "140px"
+          minWidth: "150px"
         }}
       >
         <div style={{ fontWeight: "bold", marginBottom: "6px" }}>
@@ -128,7 +137,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* MAP WITH MARKER CLUSTERING */}
+      {/* MAP WITH CLUSTERING */}
       <MapContainer
         center={[40.4168, -3.7038]}
         zoom={6}
@@ -139,18 +148,17 @@ export default function App() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <MarkerClusterGroup>
+        <MarkerClusterGroup iconCreateFunction={createClusterCustomIcon}>
           {people
-            // Defensive guard against bad CSV rows
             .filter(
-              person =>
-                typeof person.lat === "number" &&
-                typeof person.lng === "number"
+              p =>
+                typeof p.lat === "number" &&
+                typeof p.lng === "number"
             )
             .filter(
-              person =>
+              p =>
                 selectedRole === "All" ||
-                person.roleGroup?.trim() === selectedRole
+                p.roleGroup?.trim() === selectedRole
             )
             .map((person, index) => {
               const roleKey = person.roleGroup?.trim();
@@ -203,6 +211,39 @@ export default function App() {
             })}
         </MarkerClusterGroup>
       </MapContainer>
+
+      {/* ✅ CLUSTER ICON STYLES */}
+      <style>{`
+        .custom-cluster-icon {
+          background: none;
+          border: none;
+        }
+
+        .cluster-marker {
+          width: 40px;
+          height: 40px;
+          background: #2a93d5;
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+          font-size: 14px;
+          box-shadow: 0 0 5px rgba(0,0,0,0.4);
+        }
+
+        .cluster-marker::after {
+          content: "";
+          width: 28px;
+          height: 28px;
+          background: #2a93d5;
+          border-radius: 50%;
+          position: absolute;
+          transform: rotate(45deg);
+        }
+      `}</style>
     </div>
   );
 }
