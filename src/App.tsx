@@ -36,15 +36,24 @@ export default function App() {
     loadPeopleFromCSV();
   }, []);
 
-  // ✅ AUTO-GENERATE ROLES FROM CSV
-  const roleGroups = useMemo(() => {
-    const roles = people
-      .map(person => person.roleGroup?.trim())
-      .filter(Boolean); // remove undefined / empty
+  // ✅ Derive role groups and counters from CSV
+  const roleStats = useMemo(() => {
+    const counts: Record<string, number> = {};
 
-    const uniqueRoles = Array.from(new Set(roles)).sort();
+    people.forEach(person => {
+      const role = person.roleGroup?.trim();
+      if (!role) return;
 
-    return ["All", ...uniqueRoles];
+      counts[role] = (counts[role] ?? 0) + 1;
+    });
+
+    const roles = Object.keys(counts).sort();
+
+    return {
+      roles: ["All", ...roles],
+      counts,
+      total: people.length
+    };
   }, [people]);
 
   return (
@@ -62,7 +71,7 @@ export default function App() {
           boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
         }}
       >
-        {roleGroups.map(role => (
+        {roleStats.roles.map(role => (
           <button
             key={role}
             onClick={() => setSelectedRole(role)}
@@ -78,7 +87,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* LEGEND */}
+      {/* LEGEND WITH AUTOMATIC COUNTERS */}
       <div
         style={{
           position: "absolute",
@@ -89,23 +98,35 @@ export default function App() {
           padding: "10px",
           borderRadius: "8px",
           boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-          fontSize: "0.85rem"
+          fontSize: "0.85rem",
+          minWidth: "140px"
         }}
       >
         <div style={{ fontWeight: "bold", marginBottom: "6px" }}>
           Legend
         </div>
 
-        {roleGroups
-          .filter(role => role !== "All")
-          .map(role => (
+        {Object.entries(roleStats.counts).map(
+          ([role, count]) => (
             <div key={role}>
               {role === "MPS" && "🔵 "}
               {role === "Manager" && "🔴 "}
               {role === "PSS" && "🟢 "}
-              {role}
+              {role} ({count})
             </div>
-          ))}
+          )
+        )}
+
+        <div
+          style={{
+            marginTop: "8px",
+            paddingTop: "6px",
+            borderTop: "1px solid #ddd",
+            fontWeight: 600
+          }}
+        >
+          Total: {roleStats.total}
+        </div>
       </div>
 
       {/* MAP */}
@@ -120,7 +141,7 @@ export default function App() {
         />
 
         {people
-          // ✅ Defensive guard: prevent white-screen on bad data
+          // Defensive guard against bad CSV rows
           .filter(
             person =>
               typeof person.lat === "number" &&
