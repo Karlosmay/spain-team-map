@@ -24,9 +24,9 @@ export default function App() {
       const response = await fetch("/people.csv");
       const csvText = await response.text();
 
+      // ✅ FIX #1: Let PapaParse auto-detect comma-delimited CSV
       const result = Papa.parse<Person>(csvText, {
         header: true,
-        delimiter: ";",
         dynamicTyping: true,
         skipEmptyLines: true
       });
@@ -102,6 +102,12 @@ export default function App() {
         />
 
         {people
+          // ✅ FIX #3: Guard against invalid coordinates
+          .filter(
+            person =>
+              typeof person.lat === "number" &&
+              typeof person.lng === "number"
+          )
           .filter(
             person =>
               selectedRole === "All" ||
@@ -126,17 +132,7 @@ export default function App() {
                       textAlign: "center"
                     }}
                   >
-                    <img
-                      src={person.image}
-                      alt={person.name}
-                      style={{
-                        width: "96px",
-                        height: "96px",
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                        marginBottom: "10px"
-                      }}
-                    />
+                    {person.image}
 
                     <div style={{ fontWeight: 600 }}>
                       {person.name}
