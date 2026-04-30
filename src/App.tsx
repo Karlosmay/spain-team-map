@@ -4,8 +4,18 @@ import "leaflet/dist/leaflet.css";
 import Papa from "papaparse";
 import { markerIcons } from "./markerIcons";
 
+type Person = {
+  name: string;
+  role: string;
+  roleGroup: string;
+  city: string;
+  lat: number;
+  lng: number;
+  image: string;
+};
+
 export default function App() {
-  const [people, setPeople] = useState<any[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
   const [selectedRole, setSelectedRole] = useState("All");
 
   // Load CSV once on startup
@@ -14,14 +24,14 @@ export default function App() {
       const response = await fetch("/people.csv");
       const csvText = await response.text();
 
-      const result = Papa.parse(csvText, {
+      const result = Papa.parse<Person>(csvText, {
         header: true,
         delimiter: ";",
         dynamicTyping: true,
         skipEmptyLines: true
       });
 
-      setPeople(result.data as any[]);
+      setPeople(result.data);
     }
 
     loadPeopleFromCSV();
@@ -42,20 +52,16 @@ export default function App() {
           boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
         }}
       >
-{["All", "MPS", "Manager", "Support"].map(role => (
-  <button
-    key={role}
-    onClick={() => setSelectedRole(role)}
-    style={{
-      marginRight: "6px",
-      padding: "4px 8px",
-      cursor: "pointer",
-      fontWeight: selectedRole === role ? "bold" : "normal"
-    }}
-  >
-    {role}
-  </button>
-))}
+        {["All", "MPS", "Manager", "Support"].map(role => (
+          <button
+            key={role}
+            onClick={() => setSelectedRole(role)}
+            style={{
+              marginRight: "6px",
+              padding: "4px 8px",
+              cursor: "pointer",
+              fontWeight: selectedRole === role ? "bold" : "normal"
+            }}
           >
             {role}
           </button>
@@ -79,9 +85,9 @@ export default function App() {
         <div style={{ fontWeight: "bold", marginBottom: "6px" }}>
           Legend
         </div>
-       <div>🔵 MPS</div>
-<div>🔴 Manager</div>
-<div>🟢 Support</div>
+        <div>🔵 MPS</div>
+        <div>🔴 Manager</div>
+        <div>🟢 Support</div>
       </div>
 
       {/* MAP */}
@@ -105,7 +111,10 @@ export default function App() {
             <Marker
               key={index}
               position={[person.lat, person.lng]}
-              icon={markerIcons[person.roleGroup] ?? markerIcons.default}
+              icon={
+                markerIcons[person.roleGroup] ??
+                markerIcons.default
+              }
             >
               <Popup>
                 <div
