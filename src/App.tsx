@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Papa from "papaparse";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import { markerIcons } from "./markerIcons";
 
 type Person = {
@@ -36,7 +37,7 @@ export default function App() {
     loadPeopleFromCSV();
   }, []);
 
-  // ✅ Derive role groups and counters from CSV
+  // ✅ Derive roles and counters from CSV
   const roleStats = useMemo(() => {
     const counts: Record<string, number> = {};
 
@@ -106,16 +107,14 @@ export default function App() {
           Legend
         </div>
 
-        {Object.entries(roleStats.counts).map(
-          ([role, count]) => (
-            <div key={role}>
-              {role === "MPS" && "🔵 "}
-              {role === "Manager" && "🔴 "}
-              {role === "PSS" && "🟢 "}
-              {role} ({count})
-            </div>
-          )
-        )}
+        {Object.entries(roleStats.counts).map(([role, count]) => (
+          <div key={role}>
+            {role === "MPS" && "🔵 "}
+            {role === "Manager" && "🔴 "}
+            {role === "PSS" && "🟢 "}
+            {role} ({count})
+          </div>
+        ))}
 
         <div
           style={{
@@ -129,7 +128,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* MAP */}
+      {/* MAP WITH MARKER CLUSTERING */}
       <MapContainer
         center={[40.4168, -3.7038]}
         zoom={6}
@@ -140,67 +139,69 @@ export default function App() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {people
-          // Defensive guard against bad CSV rows
-          .filter(
-            person =>
-              typeof person.lat === "number" &&
-              typeof person.lng === "number"
-          )
-          .filter(
-            person =>
-              selectedRole === "All" ||
-              person.roleGroup?.trim() === selectedRole
-          )
-          .map((person, index) => {
-            const roleKey = person.roleGroup?.trim();
+        <MarkerClusterGroup>
+          {people
+            // Defensive guard against bad CSV rows
+            .filter(
+              person =>
+                typeof person.lat === "number" &&
+                typeof person.lng === "number"
+            )
+            .filter(
+              person =>
+                selectedRole === "All" ||
+                person.roleGroup?.trim() === selectedRole
+            )
+            .map((person, index) => {
+              const roleKey = person.roleGroup?.trim();
 
-            return (
-              <Marker
-                key={index}
-                position={[person.lat, person.lng]}
-                icon={markerIcons[roleKey] ?? markerIcons.default}
-              >
-                <Popup>
-                  <div
-                    style={{
-                      width: "180px",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      textAlign: "center"
-                    }}
-                  >
-                    {person.image}
-
-                    <div style={{ fontWeight: 600 }}>
-                      {person.name}
-                    </div>
-
+              return (
+                <Marker
+                  key={index}
+                  position={[person.lat, person.lng]}
+                  icon={markerIcons[roleKey] ?? markerIcons.default}
+                >
+                  <Popup>
                     <div
                       style={{
-                        fontSize: "0.85rem",
-                        color: "#555",
-                        marginTop: "2px"
+                        width: "180px",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        textAlign: "center"
                       }}
                     >
-                      {person.role}
-                    </div>
+                      {person.image}
 
-                    <div
-                      style={{
-                        fontSize: "0.75rem",
-                        color: "#777",
-                        marginTop: "4px"
-                      }}
-                    >
-                      {person.city}
+                      <div style={{ fontWeight: 600 }}>
+                        {person.name}
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: "0.85rem",
+                          color: "#555",
+                          marginTop: "2px"
+                        }}
+                      >
+                        {person.role}
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: "0.75rem",
+                          color: "#777",
+                          marginTop: "4px"
+                        }}
+                      >
+                        {person.city}
+                      </div>
                     </div>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
+                  </Popup>
+                </Marker>
+              );
+            })}
+        </MarkerClusterGroup>
       </MapContainer>
     </div>
   );
