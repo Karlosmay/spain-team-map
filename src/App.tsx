@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Papa from "papaparse";
@@ -24,7 +24,6 @@ export default function App() {
       const response = await fetch("/people.csv");
       const csvText = await response.text();
 
-      // ✅ FIX #1: Let PapaParse auto-detect comma-delimited CSV
       const result = Papa.parse<Person>(csvText, {
         header: true,
         dynamicTyping: true,
@@ -36,6 +35,17 @@ export default function App() {
 
     loadPeopleFromCSV();
   }, []);
+
+  // ✅ AUTO-GENERATE ROLES FROM CSV
+  const roleGroups = useMemo(() => {
+    const roles = people
+      .map(person => person.roleGroup?.trim())
+      .filter(Boolean); // remove undefined / empty
+
+    const uniqueRoles = Array.from(new Set(roles)).sort();
+
+    return ["All", ...uniqueRoles];
+  }, [people]);
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
@@ -52,7 +62,7 @@ export default function App() {
           boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
         }}
       >
-        {["All", "MPS", "Manager", "PSS"].map(role => (
+        {roleGroups.map(role => (
           <button
             key={role}
             onClick={() => setSelectedRole(role)}
@@ -85,9 +95,17 @@ export default function App() {
         <div style={{ fontWeight: "bold", marginBottom: "6px" }}>
           Legend
         </div>
-        <div>🔵 MPS</div>
-        <div>🔴 Manager</div>
-        <div>🟢 PSS</div>
+
+        {roleGroups
+          .filter(role => role !== "All")
+          .map(role => (
+            <div key={role}>
+              {role === "MPS" && "🔵 "}
+              {role === "Manager" && "🔴 "}
+              {role === "PSS" && "🟢 "}
+              {role}
+            </div>
+          ))}
       </div>
 
       {/* MAP */}
@@ -102,7 +120,7 @@ export default function App() {
         />
 
         {people
-          // ✅ FIX #3: Guard against invalid coordinates
+          // ✅ Defensive guard: prevent white-screen on bad data
           .filter(
             person =>
               typeof person.lat === "number" &&
