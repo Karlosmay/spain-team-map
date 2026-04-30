@@ -79,8 +79,9 @@ export default function App() {
         <div style={{ fontWeight: "bold", marginBottom: "6px" }}>
           Legend
         </div>
-        <div>🔵 MPS</div>
-        <div>🔴 Manager</div>
+       <div>🔵 MPS</div>
+<div>🔴 Manager</div>
+<div>🟢 Support</div>
       </div>
 
       {/* MAP */}
