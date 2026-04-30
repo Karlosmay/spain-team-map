@@ -10,14 +10,26 @@ const baseIcon = {
 export const markerIcons = {
   MPS: L.icon({
     ...baseIcon,
-    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"
+    iconUrl:
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"
   }),
+
   Manager: L.icon({
     ...baseIcon,
-    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"
+    iconUrl:
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"
   }),
+
+  Support: L.icon({
+    ...baseIcon,
+    iconUrl:
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png"
+  }),
+
   default: L.icon({
     ...baseIcon,
-    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png"
+    iconUrl:
+      "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png"
   })
 };
+``
