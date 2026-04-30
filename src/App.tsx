@@ -42,16 +42,20 @@ export default function App() {
           boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
         }}
       >
-        {["All", "MPS", "Manager"].map(role => (
-          <button
-            key={role}
-            onClick={() => setSelectedRole(role)}
-            style={{
-              marginRight: "6px",
-              padding: "4px 8px",
-              cursor: "pointer",
-              fontWeight: selectedRole === role ? "bold" : "normal"
-            }}
+{["All", "MPS", "Manager", "Support"].map(role => (
+  <button
+    key={role}
+    onClick={() => setSelectedRole(role)}
+    style={{
+      marginRight: "6px",
+      padding: "4px 8px",
+      cursor: "pointer",
+      fontWeight: selectedRole === role ? "bold" : "normal"
+    }}
+  >
+    {role}
+  </button>
+))}
           >
             {role}
           </button>
