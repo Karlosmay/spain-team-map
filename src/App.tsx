@@ -14,9 +14,10 @@ type Person = {
   lat: number;
   lng: number;
   image: string;
+  region: string; // ✅ NEW COLUMN
 };
 
-/* ✅ CUSTOM CLUSTER ICON (pin-style with visible number) */
+/* ✅ CUSTOM CLUSTER ICON */
 const createClusterCustomIcon = (cluster: any) => {
   return L.divIcon({
     html: `
@@ -34,8 +35,9 @@ const createClusterCustomIcon = (cluster: any) => {
 export default function App() {
   const [people, setPeople] = useState<Person[]>([]);
   const [selectedRole, setSelectedRole] = useState("All");
+  const [selectedRegion, setSelectedRegion] = useState("All");
 
-  /* Load CSV once */
+  /* Load CSV */
   useEffect(() => {
     async function loadPeopleFromCSV() {
       const response = await fetch("/people.csv");
@@ -53,7 +55,7 @@ export default function App() {
     loadPeopleFromCSV();
   }, []);
 
-  /* ✅ AUTO-GENERATE ROLES + COUNTERS */
+  /* ✅ ROLE STATS */
   const roleStats = useMemo(() => {
     const counts: Record<string, number> = {};
 
@@ -74,7 +76,8 @@ export default function App() {
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
-      {/* FILTER CONTROLS */}
+      
+      {/* ROLE FILTER */}
       <div
         style={{
           position: "absolute",
@@ -103,44 +106,33 @@ export default function App() {
         ))}
       </div>
 
-      {/* LEGEND */}
+      {/* ✅ REGION FILTER */}
       <div
         style={{
           position: "absolute",
-          bottom: 20,
+          top: 60,
           right: 10,
           zIndex: 1000,
           background: "white",
-          padding: "10px",
+          padding: "8px",
           borderRadius: "8px",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-          fontSize: "0.85rem",
-          minWidth: "150px"
+          boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
         }}
       >
-        <div style={{ fontWeight: "bold", marginBottom: "6px" }}>
-          Legend
-        </div>
-
-        {Object.entries(roleStats.counts).map(([role, count]) => (
-          <div key={role}>
-            {role === "MPS" && "🔵 "}
-            {role === "Manager" && "🔴 "}
-            {role === "PSS" && "🟢 "}
-            {role} ({count})
-          </div>
+        {["All", "Coast", "Pistacho"].map(region => (
+          <button
+            key={region}
+            onClick={() => setSelectedRegion(region)}
+            style={{
+              marginRight: "6px",
+              padding: "4px 8px",
+              cursor: "pointer",
+              fontWeight: selectedRegion === region ? "bold" : "normal"
+            }}
+          >
+            {region}
+          </button>
         ))}
-
-        <div
-          style={{
-            marginTop: "8px",
-            paddingTop: "6px",
-            borderTop: "1px solid #ddd",
-            fontWeight: 600
-          }}
-        >
-          Total: {roleStats.total}
-        </div>
       </div>
 
       {/* MAP */}
@@ -165,6 +157,11 @@ export default function App() {
               p =>
                 selectedRole === "All" ||
                 p.roleGroup?.trim() === selectedRole
+            )
+            .filter(
+              p =>
+                selectedRegion === "All" ||
+                p.region?.trim() === selectedRegion
             )
             .map((person, index) => {
               const roleKey = person.roleGroup?.trim();
@@ -191,24 +188,16 @@ export default function App() {
                         {person.name}
                       </div>
 
-                      <div
-                        style={{
-                          fontSize: "0.85rem",
-                          color: "#555",
-                          marginTop: "2px"
-                        }}
-                      >
+                      <div style={{ fontSize: "0.85rem", color: "#555" }}>
                         {person.role}
                       </div>
 
-                      <div
-                        style={{
-                          fontSize: "0.75rem",
-                          color: "#777",
-                          marginTop: "4px"
-                        }}
-                      >
+                      <div style={{ fontSize: "0.75rem", color: "#777" }}>
                         {person.city}
+                      </div>
+
+                      <div style={{ fontSize: "0.75rem", marginTop: "4px" }}>
+                        Region: {person.region}
                       </div>
                     </div>
                   </Popup>
@@ -218,7 +207,7 @@ export default function App() {
         </MarkerClusterGroup>
       </MapContainer>
 
-      {/* ✅ CLUSTER ICON STYLES */}
+      {/* CLUSTER STYLES */}
       <style>{`
         .custom-cluster-icon {
           background: none;
@@ -234,8 +223,8 @@ export default function App() {
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 0 5px rgba(0,0,0,0.4);
           position: relative;
+          box-shadow: 0 0 5px rgba(0,0,0,0.4);
         }
 
         .cluster-count {
