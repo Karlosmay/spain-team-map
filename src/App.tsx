@@ -16,10 +16,16 @@ type Person = {
   image: string;
 };
 
-/* ✅ CUSTOM CLUSTER ICON (marker-shaped with number) */
+/* ✅ CUSTOM CLUSTER ICON (pin-style with visible number) */
 const createClusterCustomIcon = (cluster: any) => {
   return L.divIcon({
-    html: `<div class="cluster-marker">${cluster.getChildCount()}</div>`,
+    html: `
+      <div class="cluster-marker">
+        <span class="cluster-count">
+          ${cluster.getChildCount()}
+        </span>
+      </div>
+    `,
     className: "custom-cluster-icon",
     iconSize: L.point(40, 40, true)
   });
@@ -97,7 +103,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* LEGEND WITH COUNTERS */}
+      {/* LEGEND */}
       <div
         style={{
           position: "absolute",
@@ -137,7 +143,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* MAP WITH CLUSTERING */}
+      {/* MAP */}
       <MapContainer
         center={[40.4168, -3.7038]}
         zoom={6}
@@ -228,10 +234,16 @@ export default function App() {
           display: flex;
           align-items: center;
           justify-content: center;
+          box-shadow: 0 0 5px rgba(0,0,0,0.4);
+          position: relative;
+        }
+
+        .cluster-count {
           color: white;
           font-weight: bold;
           font-size: 14px;
-          box-shadow: 0 0 5px rgba(0,0,0,0.4);
+          transform: rotate(45deg);
+          z-index: 2;
         }
 
         .cluster-marker::after {
@@ -242,6 +254,7 @@ export default function App() {
           border-radius: 50%;
           position: absolute;
           transform: rotate(45deg);
+          z-index: 1;
         }
       `}</style>
     </div>
