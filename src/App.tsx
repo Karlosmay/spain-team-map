@@ -14,69 +14,134 @@ type Person = {
   lat: number;
   lng: number;
   image: string;
-  region: string; // ✅ NEW COLUMN
+  region: string;
 };
 
-/* ✅ CUSTOM CLUSTER ICON */
-const createClusterCustomIcon = (cluster: any) => {
-  return L.divIcon({
+/* CLUSTER ICON */
+const createClusterCustomIcon = (cluster: any) =>
+  L.divIcon({
     html: `
       <div class="cluster-marker">
-        <span class="cluster-count">
-          ${cluster.getChildCount()}
-        </span>
+        <span class="cluster-count">${cluster.getChildCount()}</span>
       </div>
     `,
     className: "custom-cluster-icon",
     iconSize: L.point(40, 40, true)
   });
-};
 
 export default function App() {
   const [people, setPeople] = useState<Person[]>([]);
   const [selectedRole, setSelectedRole] = useState("All");
   const [selectedRegion, setSelectedRegion] = useState("All");
+  const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState(""); // ✅ NEW
 
   /* Load CSV */
   useEffect(() => {
     async function loadPeopleFromCSV() {
       const response = await fetch("/people.csv");
       const csvText = await response.text();
-
       const result = Papa.parse<Person>(csvText, {
         header: true,
         dynamicTyping: true,
         skipEmptyLines: true
       });
-
       setPeople(result.data);
     }
-
     loadPeopleFromCSV();
   }, []);
 
-  /* ✅ ROLE STATS */
+  /* ROLE OPTIONS */
   const roleStats = useMemo(() => {
-    const counts: Record<string, number> = {};
-
-    people.forEach(person => {
-      const role = person.roleGroup?.trim();
-      if (!role) return;
-      counts[role] = (counts[role] ?? 0) + 1;
+    const roles = new Set<string>();
+    people.forEach(p => {
+      if (p.roleGroup?.trim()) {
+        roles.add(p.roleGroup.trim());
+      }
     });
-
-    const roles = Object.keys(counts).sort();
-
-    return {
-      roles: ["All", ...roles],
-      counts,
-      total: people.length
-    };
+    return ["All", ...Array.from(roles).sort()];
   }, [people]);
+
+  /* ✅ PEOPLE AFTER ROLE + REGION FILTERS */
+  const filteredPeople = useMemo(() => {
+    return people
+      .filter(p => typeof p.lat === "number" && typeof p.lng === "number")
+      .filter(p => selectedRole === "All" || p.roleGroup === selectedRole)
+      .filter(p => selectedRegion === "All" || p.region === selectedRegion);
+  }, [people, selectedRole, selectedRegion]);
+
+  /* ✅ LIST FILTER (SEARCH) */
+  const visibleList = filteredPeople.filter(p =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
-      
+
+      {/* LEFT PANEL */}
+      <div
+        style={{
+          position: "absolute",
+          top: 10,
+          left: 10,
+          zIndex: 1000,
+          width: "240px",
+          maxHeight: "90vh",
+          overflowY: "auto",
+          background: "white",
+          padding: "10px",
+          borderRadius: "8px",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.25)"
+        }}
+      >
+        <div style={{ fontWeight: 600, marginBottom: "6px" }}>
+          Team members
+        </div>
+
+        {/* ✅ SEARCH BOX */}
+        <input
+          type="text"
+          placeholder="Search name..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "6px",
+            marginBottom: "8px",
+            borderRadius: "6px",
+            border: "1px solid #ccc"
+          }}
+        />
+
+        <div
+          onClick={() => setSelectedPerson(null)}
+          style={{
+            cursor: "pointer",
+            fontWeight: selectedPerson === null ? "bold" : "normal",
+            marginBottom: "6px"
+          }}
+        >
+          All members
+        </div>
+
+        {visibleList.map(person => (
+          <div
+            key={person.name}
+            onClick={() => setSelectedPerson(person.name)}
+            style={{
+              cursor: "pointer",
+              padding: "4px 0",
+              fontWeight:
+                selectedPerson === person.name ? "bold" : "normal",
+              color:
+                selectedPerson === person.name ? "#2a93d5" : "#333"
+            }}
+          >
+            {person.name}
+          </div>
+        ))}
+      </div>
+
       {/* ROLE FILTER */}
       <div
         style={{
@@ -90,14 +155,13 @@ export default function App() {
           boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
         }}
       >
-        {roleStats.roles.map(role => (
+        {roleStats.map(role => (
           <button
             key={role}
             onClick={() => setSelectedRole(role)}
             style={{
               marginRight: "6px",
               padding: "4px 8px",
-              cursor: "pointer",
               fontWeight: selectedRole === role ? "bold" : "normal"
             }}
           >
@@ -106,7 +170,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* ✅ REGION FILTER */}
+      {/* REGION FILTER */}
       <div
         style={{
           position: "absolute",
@@ -126,8 +190,8 @@ export default function App() {
             style={{
               marginRight: "6px",
               padding: "4px 8px",
-              cursor: "pointer",
-              fontWeight: selectedRegion === region ? "bold" : "normal"
+              fontWeight:
+                selectedRegion === region ? "bold" : "normal"
             }}
           >
             {region}
@@ -147,73 +211,32 @@ export default function App() {
         />
 
         <MarkerClusterGroup iconCreateFunction={createClusterCustomIcon}>
-          {people
+          {filteredPeople
             .filter(
               p =>
-                typeof p.lat === "number" &&
-                typeof p.lng === "number"
+                selectedPerson === null ||
+                p.name === selectedPerson
             )
-            .filter(
-              p =>
-                selectedRole === "All" ||
-                p.roleGroup?.trim() === selectedRole
-            )
-            .filter(
-              p =>
-                selectedRegion === "All" ||
-                p.region?.trim() === selectedRegion
-            )
-            .map((person, index) => {
-              const roleKey = person.roleGroup?.trim();
-
-              return (
-                <Marker
-                  key={index}
-                  position={[person.lat, person.lng]}
-                  icon={markerIcons[roleKey] ?? markerIcons.default}
-                >
-                  <Popup>
-                    <div
-                      style={{
-                        width: "180px",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        textAlign: "center"
-                      }}
-                    >
-                      {person.image}
-
-                      <div style={{ fontWeight: 600 }}>
-                        {person.name}
-                      </div>
-
-                      <div style={{ fontSize: "0.85rem", color: "#555" }}>
-                        {person.role}
-                      </div>
-
-                      <div style={{ fontSize: "0.75rem", color: "#777" }}>
-                        {person.city}
-                      </div>
-
-                      <div style={{ fontSize: "0.75rem", marginTop: "4px" }}>
-                        Region: {person.region}
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
+            .map((person, index) => (
+              <Marker
+                key={index}
+                position={[person.lat, person.lng]}
+                icon={markerIcons[person.roleGroup] ?? markerIcons.default}
+              >
+                <Popup>
+                  <strong>{person.name}</strong>
+                  <div>{person.role}</div>
+                  <div>{person.city}</div>
+                  <div>Region: {person.region}</div>
+                </Popup>
+              </Marker>
+            ))}
         </MarkerClusterGroup>
       </MapContainer>
 
       {/* CLUSTER STYLES */}
       <style>{`
-        .custom-cluster-icon {
-          background: none;
-          border: none;
-        }
-
+        .custom-cluster-icon { background: none; border: none; }
         .cluster-marker {
           width: 40px;
           height: 40px;
@@ -224,17 +247,13 @@ export default function App() {
           align-items: center;
           justify-content: center;
           position: relative;
-          box-shadow: 0 0 5px rgba(0,0,0,0.4);
         }
-
         .cluster-count {
           color: white;
           font-weight: bold;
-          font-size: 14px;
           transform: rotate(45deg);
           z-index: 2;
         }
-
         .cluster-marker::after {
           content: "";
           width: 28px;
