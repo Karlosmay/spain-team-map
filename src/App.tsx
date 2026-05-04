@@ -34,7 +34,7 @@ export default function App() {
   const [selectedRole, setSelectedRole] = useState("All");
   const [selectedRegion, setSelectedRegion] = useState("All");
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState(""); // ✅ NEW
+  const [searchQuery, setSearchQuery] = useState("");
 
   /* Load CSV */
   useEffect(() => {
@@ -55,14 +55,12 @@ export default function App() {
   const roleStats = useMemo(() => {
     const roles = new Set<string>();
     people.forEach(p => {
-      if (p.roleGroup?.trim()) {
-        roles.add(p.roleGroup.trim());
-      }
+      if (p.roleGroup?.trim()) roles.add(p.roleGroup.trim());
     });
     return ["All", ...Array.from(roles).sort()];
   }, [people]);
 
-  /* ✅ PEOPLE AFTER ROLE + REGION FILTERS */
+  /* FILTERED PEOPLE */
   const filteredPeople = useMemo(() => {
     return people
       .filter(p => typeof p.lat === "number" && typeof p.lng === "number")
@@ -70,7 +68,6 @@ export default function App() {
       .filter(p => selectedRegion === "All" || p.region === selectedRegion);
   }, [people, selectedRole, selectedRegion]);
 
-  /* ✅ LIST FILTER (SEARCH) */
   const visibleList = filteredPeople.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -98,7 +95,6 @@ export default function App() {
           Team members
         </div>
 
-        {/* ✅ SEARCH BOX */}
         <input
           type="text"
           placeholder="Search name..."
@@ -131,10 +127,8 @@ export default function App() {
             style={{
               cursor: "pointer",
               padding: "4px 0",
-              fontWeight:
-                selectedPerson === person.name ? "bold" : "normal",
-              color:
-                selectedPerson === person.name ? "#2a93d5" : "#333"
+              fontWeight: selectedPerson === person.name ? "bold" : "normal",
+              color: selectedPerson === person.name ? "#2a93d5" : "#333"
             }}
           >
             {person.name}
@@ -143,18 +137,7 @@ export default function App() {
       </div>
 
       {/* ROLE FILTER */}
-      <div
-        style={{
-          position: "absolute",
-          top: 10,
-          right: 10,
-          zIndex: 1000,
-          background: "white",
-          padding: "8px",
-          borderRadius: "8px",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
-        }}
-      >
+      <div style={{ position: "absolute", top: 10, right: 10, zIndex: 1000 }}>
         {roleStats.map(role => (
           <button
             key={role}
@@ -171,18 +154,7 @@ export default function App() {
       </div>
 
       {/* REGION FILTER */}
-      <div
-        style={{
-          position: "absolute",
-          top: 60,
-          right: 10,
-          zIndex: 1000,
-          background: "white",
-          padding: "8px",
-          borderRadius: "8px",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
-        }}
-      >
+      <div style={{ position: "absolute", top: 60, right: 10, zIndex: 1000 }}>
         {["All", "Coast", "Pistacho"].map(region => (
           <button
             key={region}
@@ -190,8 +162,7 @@ export default function App() {
             style={{
               marginRight: "6px",
               padding: "4px 8px",
-              fontWeight:
-                selectedRegion === region ? "bold" : "normal"
+              fontWeight: selectedRegion === region ? "bold" : "normal"
             }}
           >
             {region}
@@ -212,11 +183,7 @@ export default function App() {
 
         <MarkerClusterGroup iconCreateFunction={createClusterCustomIcon}>
           {filteredPeople
-            .filter(
-              p =>
-                selectedPerson === null ||
-                p.name === selectedPerson
-            )
+            .filter(p => selectedPerson === null || p.name === selectedPerson)
             .map((person, index) => (
               <Marker
                 key={index}
@@ -224,47 +191,27 @@ export default function App() {
                 icon={markerIcons[person.roleGroup] ?? markerIcons.default}
               >
                 <Popup>
-                  <strong>{person.name}</strong>
-                  <div>{person.role}</div>
-                  <div>{person.city}</div>
-                  <div>Region: {person.region}</div>
-                </Popup>
-              </Marker>
-            ))}
-        </MarkerClusterGroup>
-      </MapContainer>
+                  <div
+                    style={{
+                      width: "180px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      textAlign: "center"
+                    }}
+                  >
+                    {person.image && (
+                      <img
+                        src={person.image}
+                        alt={person.name}
+                        style={{
+                          width: "90px",
+                          height: "90px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          marginBottom: "6px"
+                        }}
+                      />
+                    )}
 
-      {/* CLUSTER STYLES */}
-      <style>{`
-        .custom-cluster-icon { background: none; border: none; }
-        .cluster-marker {
-          width: 40px;
-          height: 40px;
-          background: #2a93d5;
-          border-radius: 50% 50% 50% 0;
-          transform: rotate(-45deg);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-        }
-        .cluster-count {
-          color: white;
-          font-weight: bold;
-          transform: rotate(45deg);
-          z-index: 2;
-        }
-        .cluster-marker::after {
-          content: "";
-          width: 28px;
-          height: 28px;
-          background: #2a93d5;
-          border-radius: 50%;
-          position: absolute;
-          transform: rotate(45deg);
-          z-index: 1;
-        }
-      `}</style>
-    </div>
-  );
-}
+                    <div style={{ fontWeight: 600 }}>{person.name}</div>
