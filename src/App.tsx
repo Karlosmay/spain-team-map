@@ -82,11 +82,11 @@ export default function App() {
       <div
         style={{
           position: "absolute",
-          top: 10,
+          top: 80,
           left: 10,
           zIndex: 1000,
           width: "240px",
-          maxHeight: "90vh",
+          maxHeight: "calc(100vh - 100px)",
           overflowY: "auto",
           background: "white",
           padding: "10px",
