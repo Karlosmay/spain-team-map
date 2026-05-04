@@ -215,3 +215,49 @@ export default function App() {
                     )}
 
                     <div style={{ fontWeight: 600 }}>{person.name}</div>
+                    <div style={{ fontSize: "0.85rem" }}>{person.role}</div>
+                    <div style={{ fontSize: "0.75rem" }}>{person.city}</div>
+                    <div style={{ fontSize: "0.75rem" }}>
+                      Region: {person.region}
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+        </MarkerClusterGroup>
+      </MapContainer>
+
+      {/* CLUSTER STYLES */}
+      <style>{`
+        .custom-cluster-icon { background: none; border: none; }
+        .cluster-marker {
+          width: 40px;
+          height: 40px;
+          background: #2a93d5;
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        }
+        .cluster-count {
+          color: white;
+          font-weight: bold;
+          transform: rotate(45deg);
+          z-index: 2;
+        }
+        .cluster-marker::after {
+          content: "";
+          width: 28px;
+          height: 28px;
+          background: #2a93d5;
+          border-radius: 50%;
+          position: absolute;
+          transform: rotate(45deg);
+          z-index: 1;
+        }
+      `}</style>
+    </div>
+  );
+}
