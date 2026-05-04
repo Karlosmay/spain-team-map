@@ -6,18 +6,23 @@ import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { markerIcons } from "./markerIcons";
 
+/* =========================
+   Types
+========================= */
 type Person = {
   name: string;
   role: string;
   roleGroup: string;
   city: string;
+  region: string;
   lat: number;
   lng: number;
   image: string;
-  region: string;
 };
 
-/* CLUSTER ICON */
+/* =========================
+   Cluster icon
+========================= */
 const createClusterCustomIcon = (cluster: any) =>
   L.divIcon({
     html: `
@@ -30,37 +35,51 @@ const createClusterCustomIcon = (cluster: any) =>
   });
 
 export default function App() {
+  /* =========================
+     State
+  ========================= */
   const [people, setPeople] = useState<Person[]>([]);
   const [selectedRole, setSelectedRole] = useState("All");
   const [selectedRegion, setSelectedRegion] = useState("All");
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  /* Load CSV */
+  /* =========================
+     Load CSV
+  ========================= */
   useEffect(() => {
     async function loadPeopleFromCSV() {
       const response = await fetch("/people.csv");
       const csvText = await response.text();
+
       const result = Papa.parse<Person>(csvText, {
         header: true,
         dynamicTyping: true,
         skipEmptyLines: true
       });
+
       setPeople(result.data);
     }
+
     loadPeopleFromCSV();
   }, []);
 
-  /* ROLE OPTIONS */
-  const roleStats = useMemo(() => {
+  /* =========================
+     Role options
+  ========================= */
+  const roleOptions = useMemo(() => {
     const roles = new Set<string>();
     people.forEach(p => {
-      if (p.roleGroup?.trim()) roles.add(p.roleGroup.trim());
+      if (p.roleGroup?.trim()) {
+        roles.add(p.roleGroup.trim());
+      }
     });
     return ["All", ...Array.from(roles).sort()];
   }, [people]);
 
-  /* FILTERED PEOPLE */
+  /* =========================
+     Filtered people
+  ========================= */
   const filteredPeople = useMemo(() => {
     return people
       .filter(p => typeof p.lat === "number" && typeof p.lng === "number")
@@ -68,6 +87,9 @@ export default function App() {
       .filter(p => selectedRegion === "All" || p.region === selectedRegion);
   }, [people, selectedRole, selectedRegion]);
 
+  /* =========================
+     Left list (search)
+  ========================= */
   const visibleList = filteredPeople.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -75,11 +97,13 @@ export default function App() {
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
 
-      {/* LEFT PANEL */}
+      {/* =====================================================
+         LEFT PANEL (list + search)
+      ===================================================== */}
       <div
         style={{
           position: "absolute",
-          top: 80,
+          top: 80,              // below Leaflet zoom controls
           left: 10,
           zIndex: 1000,
           width: "240px",
@@ -136,9 +160,22 @@ export default function App() {
         ))}
       </div>
 
-      {/* ROLE FILTER */}
-      <div style={{ position: "absolute", top: 10, right: 10, zIndex: 1000 }}>
-        {roleStats.map(role => (
+      {/* =====================================================
+         ROLE FILTER
+      ===================================================== */}
+      <div
+        style={{
+          position: "absolute",
+          top: 10,
+          right: 10,
+          zIndex: 1000,
+          background: "white",
+          padding: "8px",
+          borderRadius: "8px",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
+        }}
+      >
+        {roleOptions.map(role => (
           <button
             key={role}
             onClick={() => setSelectedRole(role)}
@@ -153,8 +190,21 @@ export default function App() {
         ))}
       </div>
 
-      {/* REGION FILTER */}
-      <div style={{ position: "absolute", top: 60, right: 10, zIndex: 1000 }}>
+      {/* =====================================================
+         REGION FILTER
+      ===================================================== */}
+      <div
+        style={{
+          position: "absolute",
+          top: 60,
+          right: 10,
+          zIndex: 1000,
+          background: "white",
+          padding: "8px",
+          borderRadius: "8px",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
+        }}
+      >
         {["All", "Coast", "Pistacho"].map(region => (
           <button
             key={region}
@@ -170,7 +220,9 @@ export default function App() {
         ))}
       </div>
 
-      {/* MAP */}
+      {/* =====================================================
+         MAP
+      ===================================================== */}
       <MapContainer
         center={[40.4168, -3.7038]}
         zoom={6}
@@ -205,11 +257,11 @@ export default function App() {
                         src={person.image}
                         alt={person.name}
                         style={{
-                          width: "90px",
-                          height: "90px",
-                          borderRadius: "50%",
+                          width: "100px",
+                          height: "100px",
                           objectFit: "cover",
-                          marginBottom: "6px"
+                          borderRadius: "50%",
+                          marginBottom: "8px"
                         }}
                       />
                     )}
@@ -227,9 +279,15 @@ export default function App() {
         </MarkerClusterGroup>
       </MapContainer>
 
-      {/* CLUSTER STYLES */}
+      {/* =====================================================
+         CLUSTER STYLES
+      ===================================================== */}
       <style>{`
-        .custom-cluster-icon { background: none; border: none; }
+        .custom-cluster-icon {
+          background: none;
+          border: none;
+        }
+
         .cluster-marker {
           width: 40px;
           height: 40px;
@@ -241,12 +299,14 @@ export default function App() {
           justify-content: center;
           position: relative;
         }
+
         .cluster-count {
           color: white;
           font-weight: bold;
           transform: rotate(45deg);
           z-index: 2;
         }
+
         .cluster-marker::after {
           content: "";
           width: 28px;
