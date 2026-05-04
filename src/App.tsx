@@ -88,6 +88,20 @@ export default function App() {
   }, [people, selectedRole, selectedRegion]);
 
   /* =========================
+     ✅ Role counters (NEW)
+     Region-aware and future-proof
+  ========================= */
+  const roleCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    filteredPeople.forEach(p => {
+      const role = p.roleGroup;
+      if (!role) return;
+      counts[role] = (counts[role] ?? 0) + 1;
+    });
+    return counts;
+  }, [filteredPeople]);
+
+  /* =========================
      Left list (search)
   ========================= */
   const visibleList = filteredPeople.filter(p =>
@@ -97,13 +111,11 @@ export default function App() {
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
 
-      {/* =====================================================
-         LEFT PANEL (list + search)
-      ===================================================== */}
+      {/* LEFT PANEL */}
       <div
         style={{
           position: "absolute",
-          top: 80,              // below Leaflet zoom controls
+          top: 80,
           left: 10,
           zIndex: 1000,
           width: "240px",
@@ -160,9 +172,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* =====================================================
-         ROLE FILTER
-      ===================================================== */}
+      {/* ROLE FILTER (with counts) */}
       <div
         style={{
           position: "absolute",
@@ -186,13 +196,14 @@ export default function App() {
             }}
           >
             {role}
+            {role !== "All" && roleCounts[role] !== undefined && (
+              <> ({roleCounts[role]})</>
+            )}
           </button>
         ))}
       </div>
 
-      {/* =====================================================
-         REGION FILTER
-      ===================================================== */}
+      {/* REGION FILTER */}
       <div
         style={{
           position: "absolute",
@@ -220,9 +231,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* =====================================================
-         MAP
-      ===================================================== */}
+      {/* MAP */}
       <MapContainer
         center={[40.4168, -3.7038]}
         zoom={6}
@@ -279,9 +288,7 @@ export default function App() {
         </MarkerClusterGroup>
       </MapContainer>
 
-      {/* =====================================================
-         CLUSTER STYLES
-      ===================================================== */}
+      {/* CLUSTER STYLES */}
       <style>{`
         .custom-cluster-icon {
           background: none;
