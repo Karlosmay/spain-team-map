@@ -3,5 +3,5 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: "/spain-team-map/" // ✅ use YOUR repo name here
+  base: "/" // ✅ REQUIRED for Azure Static Web Apps
 });
