@@ -20,8 +20,19 @@ type Person = {
   image: string;
 };
 
+type Account = {
+  accountName: string;
+  accountLead: string;
+  robNumber: string;
+  region: string;
+  city: string;
+  lat: number;
+  lng: number;
+  accountLink: string;
+};
+
 /* =========================
-   Cluster icon
+   Cluster icon (People)
 ========================= */
 const createClusterCustomIcon = (cluster: any) =>
   L.divIcon({
@@ -34,21 +45,38 @@ const createClusterCustomIcon = (cluster: any) =>
     iconSize: L.point(40, 40, true)
   });
 
+/* =========================
+   Account icon (NO cluster)
+========================= */
+const accountIcon = new L.Icon({
+  iconUrl: "/icons/account.svg", // or .png
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32]
+});
+
 export default function App() {
+  /* =========================
+     State
+  ========================= */
   const [people, setPeople] = useState<Person[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+
   const [selectedRole, setSelectedRole] = useState("All");
   const [selectedRegion, setSelectedRegion] = useState("All");
+
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAccounts, setShowAccounts] = useState(false);
 
   /* =========================
-     Load CSV  ✅ FIXED
+     Load People CSV
   ========================= */
   useEffect(() => {
     async function loadPeopleFromCSV() {
-      const response = await fetch(
-        `${import.meta.env.BASE_URL}people.csv`
-      );
+      const response = await fetch(`${import.meta.env.BASE_URL}people.csv`);
       const csvText = await response.text();
 
       const result = Papa.parse<Person>(csvText, {
@@ -64,7 +92,27 @@ export default function App() {
   }, []);
 
   /* =========================
-     Role options
+     Load Accounts CSV
+  ========================= */
+  useEffect(() => {
+    async function loadAccountsFromCSV() {
+      const response = await fetch(`${import.meta.env.BASE_URL}accounts.csv`);
+      const csvText = await response.text();
+
+      const result = Papa.parse<Account>(csvText, {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true
+      });
+
+      setAccounts(result.data);
+    }
+
+    loadAccountsFromCSV();
+  }, []);
+
+  /* =========================
+     Role options (People)
   ========================= */
   const roleOptions = useMemo(() => {
     const roles = new Set<string>();
@@ -77,7 +125,7 @@ export default function App() {
   }, [people]);
 
   /* =========================
-     Filtered people
+     Filtered People
   ========================= */
   const filteredPeople = useMemo(() => {
     return people
@@ -87,22 +135,33 @@ export default function App() {
   }, [people, selectedRole, selectedRegion]);
 
   /* =========================
-     Role counters
+     Filtered Accounts
+  ========================= */
+  const filteredAccounts = useMemo(() => {
+    return accounts
+      .filter(a => typeof a.lat === "number" && typeof a.lng === "number")
+      .filter(a => selectedRegion === "All" || a.region === selectedRegion);
+  }, [accounts, selectedRegion]);
+
+  /* =========================
+     Role counters (People)
   ========================= */
   const roleCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     filteredPeople.forEach(p => {
-      const role = p.roleGroup;
-      if (!role) return;
-      counts[role] = (counts[role] ?? 0) + 1;
+      if (!p.roleGroup) return;
+      counts[p.roleGroup] = (counts[p.roleGroup] ?? 0) + 1;
     });
     return counts;
   }, [filteredPeople]);
 
-  const visibleList = filteredPeople.filter(p =>
+  const visiblePeopleList = filteredPeople.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  /* =========================
+     UI
+  ========================= */
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
       {/* LEFT PANEL */}
@@ -121,6 +180,7 @@ export default function App() {
           boxShadow: "0 2px 6px rgba(0,0,0,0.25)"
         }}
       >
+        {/* PEOPLE LIST */}
         <div style={{ fontWeight: 600, marginBottom: "6px" }}>
           Team members
         </div>
@@ -150,20 +210,66 @@ export default function App() {
           All members
         </div>
 
-        {visibleList.map(person => (
+        {visiblePeopleList.map(person => (
           <div
             key={person.name}
             onClick={() => setSelectedPerson(person.name)}
             style={{
               cursor: "pointer",
               padding: "4px 0",
-              fontWeight: selectedPerson === person.name ? "bold" : "normal",
-              color: selectedPerson === person.name ? "#2a93d5" : "#333"
+              fontWeight:
+                selectedPerson === person.name ? "bold" : "normal"
             }}
           >
             {person.name}
           </div>
         ))}
+
+        {/* ACCOUNTS LIST */}
+        {showAccounts && (
+          <>
+            <div
+              style={{
+                fontWeight: 600,
+                marginTop: "12px",
+                marginBottom: "6px"
+              }}
+            >
+              Accounts
+            </div>
+
+            <div
+              onClick={() => setSelectedAccount(null)}
+              style={{
+                cursor: "pointer",
+                fontWeight:
+                  selectedAccount === null ? "bold" : "normal",
+                marginBottom: "6px"
+              }}
+            >
+              All accounts
+            </div>
+
+            {filteredAccounts.map(account => (
+              <div
+                key={account.accountName}
+                onClick={() =>
+                  setSelectedAccount(account.accountName)
+                }
+                style={{
+                  cursor: "pointer",
+                  padding: "4px 0",
+                  fontWeight:
+                    selectedAccount === account.accountName
+                      ? "bold"
+                      : "normal"
+                }}
+              >
+                {account.accountName}
+              </div>
+            ))}
+          </>
+        )}
       </div>
 
       {/* ROLE FILTER */}
@@ -183,11 +289,7 @@ export default function App() {
           <button
             key={role}
             onClick={() => setSelectedRole(role)}
-            style={{
-              marginRight: "6px",
-              padding: "4px 8px",
-              fontWeight: selectedRole === role ? "bold" : "normal"
-            }}
+            style={{ marginRight: "6px" }}
           >
             {role}
             {role !== "All" && roleCounts[role] !== undefined && (
@@ -197,7 +299,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* REGION FILTER */}
+      {/* REGION FILTER + LAYER TOGGLE */}
       <div
         style={{
           position: "absolute",
@@ -214,15 +316,22 @@ export default function App() {
           <button
             key={region}
             onClick={() => setSelectedRegion(region)}
-            style={{
-              marginRight: "6px",
-              padding: "4px 8px",
-              fontWeight: selectedRegion === region ? "bold" : "normal"
-            }}
+            style={{ marginRight: "6px" }}
           >
             {region}
           </button>
         ))}
+
+        <div style={{ marginTop: "6px" }}>
+          <label>
+            <input
+              type="checkbox"
+              checked={showAccounts}
+              onChange={() => setShowAccounts(v => !v)}
+            />{" "}
+            Accounts
+          </label>
+        </div>
       </div>
 
       {/* MAP */}
@@ -236,25 +345,23 @@ export default function App() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
+        {/* PEOPLE LAYER (CLUSTERED) */}
         <MarkerClusterGroup iconCreateFunction={createClusterCustomIcon}>
           {filteredPeople
-            .filter(p => selectedPerson === null || p.name === selectedPerson)
+            .filter(
+              p => selectedPerson === null || p.name === selectedPerson
+            )
             .map((person, index) => (
               <Marker
                 key={index}
                 position={[person.lat, person.lng]}
-                icon={markerIcons[person.roleGroup] ?? markerIcons.default}
+                icon={
+                  markerIcons[person.roleGroup] ??
+                  markerIcons.default
+                }
               >
                 <Popup>
-                  <div
-                    style={{
-                      width: "180px",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      textAlign: "center"
-                    }}
-                  >
+                  <div style={{ textAlign: "center" }}>
                     {person.image && (
                       <img
                         src={person.image}
@@ -262,57 +369,59 @@ export default function App() {
                         style={{
                           width: "100px",
                           height: "100px",
-                          objectFit: "cover",
                           borderRadius: "50%",
                           marginBottom: "8px"
                         }}
                       />
                     )}
-
-                    <div style={{ fontWeight: 600 }}>{person.name}</div>
-                    <div style={{ fontSize: "0.85rem" }}>{person.role}</div>
-                    <div style={{ fontSize: "0.75rem" }}>{person.city}</div>
-                    <div style={{ fontSize: "0.75rem" }}>
-                      Region: {person.region}
+                    <div style={{ fontWeight: 600 }}>
+                      {person.name}
                     </div>
+                    <div>{person.role}</div>
+                    <div>{person.city}</div>
+                    <div>Region: {person.region}</div>
                   </div>
                 </Popup>
               </Marker>
             ))}
         </MarkerClusterGroup>
-      </MapContainer>
 
-      {/* CLUSTER STYLES */}
-      <style>{`
-        .custom-cluster-icon { background: none; border: none; }
-        .cluster-marker {
-          width: 40px;
-          height: 40px;
-          background: #2a93d5;
-          border-radius: 50% 50% 50% 0;
-          transform: rotate(-45deg);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-        }
-        .cluster-count {
-          color: white;
-          font-weight: bold;
-          transform: rotate(45deg);
-          z-index: 2;
-        }
-        .cluster-marker::after {
-          content: "";
-          width: 28px;
-          height: 28px;
-          background: #2a93d5;
-          border-radius: 50%;
-          position: absolute;
-          transform: rotate(45deg);
-          z-index: 1;
-        }
-      `}</style>
+        {/* ACCOUNTS LAYER (NO CLUSTER) */}
+        {showAccounts &&
+          filteredAccounts
+            .filter(
+              a =>
+                selectedAccount === null ||
+                a.accountName === selectedAccount
+            )
+            .map((account, index) => (
+              <Marker
+                key={`account-${index}`}
+                position={[account.lat, account.lng]}
+                icon={accountIcon}
+              >
+                <Popup>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontWeight: 600 }}>
+                      {account.accountName}
+                    </div>
+                    <div>Lead: {account.accountLead}</div>
+                    <div>ROB: {account.robNumber}</div>
+                    <div>
+                      {account.city} — {account.region}
+                    </div>
+                    <a
+                      href={account.accountLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open account details
+                    </a>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+      </MapContainer>
     </div>
   );
 }
