@@ -35,9 +35,6 @@ const createClusterCustomIcon = (cluster: any) =>
   });
 
 export default function App() {
-  /* =========================
-     State
-  ========================= */
   const [people, setPeople] = useState<Person[]>([]);
   const [selectedRole, setSelectedRole] = useState("All");
   const [selectedRegion, setSelectedRegion] = useState("All");
@@ -45,11 +42,13 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
 
   /* =========================
-     Load CSV
+     Load CSV  ✅ FIXED
   ========================= */
   useEffect(() => {
     async function loadPeopleFromCSV() {
-      const response = await fetch("/people.csv");
+      const response = await fetch(
+        `${import.meta.env.BASE_URL}people.csv`
+      );
       const csvText = await response.text();
 
       const result = Papa.parse<Person>(csvText, {
@@ -88,8 +87,7 @@ export default function App() {
   }, [people, selectedRole, selectedRegion]);
 
   /* =========================
-     ✅ Role counters (NEW)
-     Region-aware and future-proof
+     Role counters
   ========================= */
   const roleCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -101,16 +99,12 @@ export default function App() {
     return counts;
   }, [filteredPeople]);
 
-  /* =========================
-     Left list (search)
-  ========================= */
   const visibleList = filteredPeople.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
-
       {/* LEFT PANEL */}
       <div
         style={{
@@ -172,7 +166,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* ROLE FILTER (with counts) */}
+      {/* ROLE FILTER */}
       <div
         style={{
           position: "absolute",
@@ -290,11 +284,7 @@ export default function App() {
 
       {/* CLUSTER STYLES */}
       <style>{`
-        .custom-cluster-icon {
-          background: none;
-          border: none;
-        }
-
+        .custom-cluster-icon { background: none; border: none; }
         .cluster-marker {
           width: 40px;
           height: 40px;
@@ -306,14 +296,12 @@ export default function App() {
           justify-content: center;
           position: relative;
         }
-
         .cluster-count {
           color: white;
           font-weight: bold;
           transform: rotate(45deg);
           z-index: 2;
         }
-
         .cluster-marker::after {
           content: "";
           width: 28px;
