@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Papa from "papaparse";
-import MarkerClusterGroup from "react-leaflet-cluster";
+import MarkerClusterGroup from "@changey/react-leaflet-markercluster";
 import L from "leaflet";
 import { markerIcons } from "./markerIcons";
 
